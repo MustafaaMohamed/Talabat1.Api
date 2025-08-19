@@ -3,6 +3,10 @@ using Domain.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Persistence.Data;
+using Persistence.Repositories;
+using Services;
+using Services.Abstraction;
+using Services.MappingProfiles;
 
 namespace Talabat1.Api
 {
@@ -22,7 +26,12 @@ namespace Talabat1.Api
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
-            builder.Services.AddScoped<IDbInitializer, DbInitializer>(); 
+            builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IServicesManager,ServicesManager>();
+
+            builder.Services.AddAutoMapper(typeof(ProductProfile).Assembly);
+
             var app = builder.Build();
             using var scope= app.Services.CreateScope();
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>(); // Allow clr to create object of type IDbInitializer 

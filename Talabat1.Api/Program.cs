@@ -1,5 +1,6 @@
 
 using Domain.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Persistence.Data;
@@ -7,6 +8,8 @@ using Persistence.Repositories;
 using Services;
 using Services.Abstraction;
 using Services.MappingProfiles;
+using Shared.ErrorModels;
+using Talabat1.Api.Middlewares;
 
 namespace Talabat1.Api
 {
@@ -31,14 +34,32 @@ namespace Talabat1.Api
             builder.Services.AddScoped<IServicesManager,ServicesManager>();
 
             builder.Services.AddAutoMapper(typeof(ProductProfile).Assembly);
-
+            builder.Services.Configure<ApiBehaviorOptions>(config =>
+            {
+            config.InvalidModelStateResponseFactory = (actionContext) =>
+            {
+                var errors = actionContext.ModelState.Where(m=>m.Value.Errors.Any())
+                .Select(m=> new ValidationError()
+                {
+                    Field = m.Key,
+                    Errors = m.Value.Errors.Select(errors=>errors.ErrorMessage)
+                });
+                var response = new ValidationErrorResponse()
+                {
+                    Errors = errors
+                };
+                return new BadRequestObjectResult(response);
+            };
+            });
             var app = builder.Build();
             using var scope= app.Services.CreateScope();
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>(); // Allow clr to create object of type IDbInitializer 
             await dbInitializer.InitializeAsync();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+			app.UseMiddleware<GlobalErrorHandlingMiddleware>();
+
+			// Configure the HTTP request pipeline.
+			if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();

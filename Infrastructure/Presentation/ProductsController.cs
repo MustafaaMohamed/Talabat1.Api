@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Attributes;
 using Services.Abstraction;
@@ -27,6 +28,7 @@ namespace Presentation
 		[ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorDetails))]
 		[ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrorDetails))]
 		[Cache(100)]
+		[Authorize]
 		public async Task<ActionResult<ProductDto>> GetProductByIdAsync(int id)
 		{
 			var result = await servicesManager.ProductService.GetProductByIdAsync(id);

@@ -1,14 +1,13 @@
 ﻿using Domain.Contracts;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
-
 namespace Persistence
 {
 	public static class SpecificationEvaluator
 	{
-		public static IQueryable<TEntity> GetQuery<TEntity,TKey>
+		public static IQueryable<TEntity> GetQuery<TEntity, TKey>
 			(IQueryable<TEntity> inputQuery
-			,ISpecification<TEntity,TKey> spec) where TEntity : BaseEntity<TKey>
+			, ISpecification<TEntity, TKey> spec) where TEntity : BaseEntity<TKey>
 		{
 			var query = inputQuery;
 			if (spec.Criteria is not null)

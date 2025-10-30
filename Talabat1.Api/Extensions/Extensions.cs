@@ -1,15 +1,22 @@
 ﻿using Domain.Contracts;
+using Domain.Models.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Persistence;
+using Persistence.Identity;
 using Services;
+using Shared;
 using Shared.ErrorModels;
+using System.Text;
 using Talabat1.Api.Middlewares;
-
 namespace Talabat1.Api.Extensions
 {
 	public static class Extensions
 	{
-		public static IServiceCollection RegisterAllServices(this IServiceCollection services,IConfiguration configuration)
+		public static IServiceCollection RegisterAllServices(this IServiceCollection services, IConfiguration configuration)
 		{
 
 			services.AddBuiltInServices();
@@ -17,8 +24,10 @@ namespace Talabat1.Api.Extensions
 			services.AddSwaggerServices();
 
 			services.AddInfrastructureServices(configuration);
-			services.AddApplicationServices();
+			services.AddIdentityServices();
+			services.AddApplicationServices(configuration);
 			services.ConfigureService();
+			services.ConfigureJwtService(configuration);
 			return services;
 		}
 		public static async Task<WebApplication> ConfigureMiddlewares(this WebApplication app)
@@ -36,6 +45,7 @@ namespace Talabat1.Api.Extensions
 
 			app.UseHttpsRedirection();
 
+			app.UseAuthentication();
 			app.UseAuthorization();
 
 
@@ -43,11 +53,41 @@ namespace Talabat1.Api.Extensions
 			return app;
 
 		}
+		private static IServiceCollection ConfigureJwtService(this IServiceCollection services,IConfiguration configuration)
+		{
+			var jwtOptions = configuration.GetSection("JwtOptions").Get<JwtOptions>();
+
+			services.AddAuthentication(options =>
+			{
+				options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+				options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+			}).AddJwtBearer(options =>
+			{
+				options.TokenValidationParameters = new TokenValidationParameters()
+				{
+					ValidateAudience = true,
+					ValidateIssuer = true,
+					ValidateIssuerSigningKey = true,
+					ValidateLifetime = true,
+					ValidIssuer = jwtOptions.Issuer,
+					ValidAudience = jwtOptions.Audience,
+					IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
+				};
+			});
+			return services;
+		}
+		private static IServiceCollection AddIdentityServices(this IServiceCollection services)
+		{
+			services.AddIdentity<AppUser, IdentityRole>()
+				.AddEntityFrameworkStores<TalabatIdentityDbContext>();
+			return services;
+		}
 		private static async Task<WebApplication> InitializeDbAsync(this WebApplication app)
 		{
 			using var scope = app.Services.CreateScope();
 			var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>(); // Allow clr to create object of type IDbInitializer 
 			await dbInitializer.InitializeAsync();
+			await dbInitializer.InitializeIdentityAsync();
 
 			return app;
 		}

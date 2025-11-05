@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Services.Abstraction;
 using Shared;
+using System.Security.Claims;
 
 namespace Presentation
 {
@@ -21,5 +23,45 @@ namespace Presentation
 			var result = await servicesManager.AuthService.RegisterAsync(registerDto);
 			return Ok(result);
 		}
+
+		[HttpGet("EmailExists")]
+		public async Task<IActionResult> CheckEmailExistAsync(string userEmail)
+		{
+			var result = await servicesManager.AuthService.CheckEmailExistAsync(userEmail);
+			return Ok(result);
+		}
+
+		[HttpGet]
+		[Authorize]
+		public async Task<IActionResult> GetCurrentUserAsync()
+		{
+			var email = User.FindFirstValue(ClaimTypes.Email);
+			var result = await servicesManager.AuthService.GetCurrentUserAsync(email);
+			return Ok(result);
+		}
+
+		[HttpPut("Address")]
+		[Authorize]
+
+		public async Task<IActionResult> UpdateCurrentUserAddressAsync(AddressDto addressDto)
+		{
+			var email = User.FindFirstValue(ClaimTypes.Email);
+
+			var result = await servicesManager.AuthService.UpdateCurrentUserAddressAsync(addressDto, email);
+			return Ok(result);
+
+		}
+
+
+		[HttpGet("Address")]
+		[Authorize]
+		public async Task<IActionResult> GetCurrentUserAddressAsync()
+		{
+			var email = User.FindFirstValue(ClaimTypes.Email);
+			var result = await servicesManager.AuthService.GetCurrentUserAddressAsync(email);
+			return Ok(result);
+
+		}
+
 	}
 }

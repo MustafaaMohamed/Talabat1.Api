@@ -13,19 +13,13 @@ namespace Persistence.Repositories
 		{
 			_context = context;
 		}
-		//public async Task<IEnumerable<TEntity>> GetAllAsync(bool trackChanges = false)
-		//{
-		//	if(typeof(TEntity) == typeof(Product))
-		//	{
-		//		if (trackChanges)
-		//			return await _context.Products.Include(p => p.ProductBrand).Include(p => p.ProductType).ToListAsync() as IEnumerable<TEntity>;
-		//		return await _context.Products.Include(p => p.ProductBrand).Include(p => p.ProductType).AsNoTracking().ToListAsync() as IEnumerable<TEntity>;
-		//	}
-		//	if(trackChanges)
-		//		return await _context.Set<TEntity>().ToListAsync();
-		//	return await _context.Set<TEntity>().AsNoTracking().ToListAsync();
+		public async Task<IEnumerable<TEntity>> GetAllAsync(bool trackChanges = false)
+		{
+			if (trackChanges)
+				return await _context.Set<TEntity>().ToListAsync();
+			return await _context.Set<TEntity>().AsNoTracking().ToListAsync();
 
-		//}
+		}
 		public async Task<IEnumerable<TEntity>> GetAllAsync(ISpecification<TEntity, TKey> spec, bool trackChanges = false)
 		{
 			if (trackChanges)
@@ -65,6 +59,9 @@ namespace Persistence.Repositories
 			return SpecificationEvaluator.GetQuery(_context.Set<TEntity>(), spec);
 		}
 
-		
+		public async Task<TEntity?> GetByIdAsync(TKey id)
+		{
+			return await _context.Set<TEntity>().FindAsync(id);
+		}
 	}
 }

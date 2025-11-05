@@ -28,6 +28,15 @@ namespace Talabat1.Api.Extensions
 			services.AddApplicationServices(configuration);
 			services.ConfigureService();
 			services.ConfigureJwtService(configuration);
+			services.AddCors(options =>
+			{
+				options.AddPolicy("MyPolicy", corsPolicy =>
+				{
+					corsPolicy.AllowAnyMethod()
+					.AllowAnyHeader().WithOrigins("http://localhost:4200").AllowCredentials(); ;
+
+				});
+			});
 			return services;
 		}
 		public static async Task<WebApplication> ConfigureMiddlewares(this WebApplication app)
@@ -42,7 +51,8 @@ namespace Talabat1.Api.Extensions
 				app.UseSwaggerUI();
 			}
 			app.UseStaticFiles();
-
+			app.UseRouting();
+			app.UseCors("MyPolicy");
 			app.UseHttpsRedirection();
 
 			app.UseAuthentication();
